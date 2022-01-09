@@ -1,5 +1,5 @@
 
-const philips_hue_url = "YOUR_PHILIPS_HUE_URL";
+const philips_hue_url = "YOUR_HUE_URL";
 const arduino_ip_address = "YOUR_ARDUINO_IP_ADDRESS";
 
 let humidifier_controls = new Reef("#humidifier_controls", {
