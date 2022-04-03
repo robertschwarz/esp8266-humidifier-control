@@ -8,6 +8,7 @@ let humidifier_controls = new Reef("#humidifier_controls", {
         humidity: 40,
         humidifier_status: true,
         auto_mode: true,
+        show_display: true,
     },
     template: function (props) {
         return `
@@ -37,6 +38,17 @@ let humidifier_controls = new Reef("#humidifier_controls", {
         role="switch"
       />
       Automatic Mode is ${props.auto_mode ? "on" : "off"}!
+    </label>
+    <label for="show_display">
+      <input
+        reef-checked="${props.show_display}"
+        onchange="toggle(this, 'show_display')"
+        type="checkbox"
+        id="show_display"
+        name="show_display"
+        role="switch"
+      />
+      Display is ${props.show_display ? "on" : "off"}!
     </label>
   </fieldset>`;
     },
@@ -85,6 +97,7 @@ let humidifier_range = new Reef("#humidifier_range", {
     },
 });
 
+ /* clusterfuck if/else chain, because I was lazy. needs refactoring. */
 const toggle = (elem, prop) => {
     humidifier_controls.data[prop] = elem.checked;
     if (prop === "auto_mode") {
@@ -97,7 +110,7 @@ const toggle = (elem, prop) => {
             .catch((error) =>
                 console.log(`An error occured while trying to post to /api/auto!`, error)
             );
-    } else {
+    } else if(prop === "humidifier_status") {
         const settings = {
             method: "PUT",
             body: JSON.stringify({ on: elem.checked }),
@@ -112,6 +125,14 @@ const toggle = (elem, prop) => {
             .catch((error) =>
                 console.log(`An error while trying to toggle the plug!`, error)
             );
+    } else if(prop === "show_display") {
+        const params = `on=${elem.checked ? 1 : 0}`;
+        fetch(`${arduino_ip_address}/api/display?${params}`, { method: "POST" })
+            .then(() => {
+                console.log(`Successfully toggled display!`)
+                fetchHumidifierData()
+            })
+            .catch(error => console.log("An error occured while trying to turn off the display!", error))
     }
 };
 
@@ -134,6 +155,7 @@ const fetchHumidifierData = () => {
             humidifier_controls.data.temperature = res_json.temperature;
             humidifier_controls.data.humidity = res_json.humidity;
             humidifier_controls.data.auto_mode = Boolean(Number(res_json.autoMode));
+            humidifier_controls.data.show_display = Boolean(Number(res_json.showDisplay));
 
             humidifier_range.data.min_humidity = res_json.minHumidity;
             humidifier_range.data.max_humidity = res_json.maxHumidity;

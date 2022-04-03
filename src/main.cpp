@@ -47,6 +47,7 @@ int autoMode;
 int minHumidity;
 int maxHumidity;
 int humidifier;
+int show_display = 1;
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -117,6 +118,7 @@ void setup()
               json["minHumidity"] = minHumidity;
               json["maxHumidity"] = maxHumidity;
               json["humidifier"] = humidifier;
+              json["showDisplay"] = show_display;
 
               serializeJson(json, *response);
               request->send(response);
@@ -162,6 +164,16 @@ void setup()
               request->send(200, "text/plain", "Range set!");
             });
 
+    server.on("/api/display", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
+              if (request->hasParam("on")) {
+                show_display = request->getParam("on")->value().toInt();
+                Serial.println("Display toggled: ");
+                Serial.print(show_display);
+              }
+              
+              request->send(200, "text/plain", "Togged the display!");
+            });
   // Start server
   server.begin();
 }
@@ -220,11 +232,18 @@ void loop()
   http.begin(wifiClient, philips_hue_url);
   http.addHeader("Content-Type", "application/json");
 
-  display.clearDisplay();
-  oledDisplayHeader();
-  oledDisplay(3, 5, 28, humi, "%");
-  oledDisplay(3, 55, 28, tempC, "C");
-  display.display();
+  if (show_display == 1) {
+
+    display.ssd1306_command(SSD1306_DISPLAYON);
+    display.clearDisplay();
+    oledDisplayHeader();
+    oledDisplay(3, 5, 28, humi, "%");
+    oledDisplay(3, 55, 28, tempC, "C");
+    display.display();
+
+  } else {
+    display.ssd1306_command(SSD1306_DISPLAYOFF);
+  }
 
   if (autoMode == 1)
   {
